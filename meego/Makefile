@@ -1,13 +1,14 @@
 PACKAGE := libprolog
 VERSION := 0.0.4
+THISDIR := meego
 
-TOPDIR  := $(shell while [ ! -d fedora -a "`pwd`" != "/" ]; do cd ..; done; \
-		   [ -d fedora ] && pwd || exit 1)
+TOPDIR  := $(shell while [ ! -d $(THISDIR) -a "`pwd`" != "/" ]; do cd ..; done;\
+		   [ -d $(THISDIR) ] && pwd || exit 1)
 
 ARCH     := i386
 RPM      := $(PACKAGE)-$(VERSION).$(ARCH).rpm
-SPECFILE := $(TOPDIR)/fedora/$(PACKAGE).spec
-TARBALL  := $(TOPDIR)/fedora/$(PACKAGE)-$(VERSION).tar.gz
+SPECFILE := $(TOPDIR)/$(THISDIR)/$(PACKAGE).spec
+TARBALL  := $(TOPDIR)/$(THISDIR)/$(PACKAGE)-$(VERSION).tar.gz
 TARDIR  := $(notdir $(TOPDIR))
 
 STAMP   := $(shell date +%Y-%m-%d-%H%M%S)
@@ -25,8 +26,8 @@ rpms: rmtar $(SPECFILE) $(TARBALL)
 	    -bb $(TMPDIR)/SPECS/$(PACKAGE).spec && \
 	rpmbuild --define '_topdir $(TMPDIR)' \
 	    -bs $(TMPDIR)/SPECS/$(PACKAGE).spec && \
-	cp $(TMPDIR)/RPMS/$(ARCH)/*.rpm $(TOPDIR)/fedora
-	cp $(TMPDIR)/SRPMS/*.rpm $(TOPDIR)/fedora
+	cp $(TMPDIR)/RPMS/$(ARCH)/*.rpm $(TOPDIR)/$(THISDIR)
+	cp $(TMPDIR)/SRPMS/*.rpm $(TOPDIR)/$(THISDIR)
 
 cleanup:
 	rm -fr $(TMPDIR) && \
@@ -44,9 +45,11 @@ $(TARBALL):
 	pushd $(TOPDIR) && make distclean || : && ./autogen.sh && popd && \
 	pushd $(TOPDIR)/.. && \
 	tar -cvzf /tmp/$(notdir $@) \
-	    --exclude '*/fedora' \
+	    --exclude '*/$(THISDIR)' \
 	    --exclude '*/.git' $(notdir $(TARDIR)) && \
 	mv /tmp/$(notdir $@) $@
+
+meego-export: $(SPECFILE) $(TARBALL)
 
 rmtar:
 	rm -f $(TARBALL)

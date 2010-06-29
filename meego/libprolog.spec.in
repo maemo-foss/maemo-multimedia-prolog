@@ -77,5 +77,6 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %{_sysconfdir}/ohm/plugins.d/rule_engine.ini
 
 %changelog
-* Wed Apr 24 2008 Krisztian Litkey <krisztian.litkey@nokia.com> - 
-- Initial build.
+* Tue Jun 29 2010 Krisztian Litkey <mmf-audio-bounces@projects.maemo.org> - 
+- Quick'n dirty initial packaging.
+
