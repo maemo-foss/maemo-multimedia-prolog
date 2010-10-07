@@ -117,59 +117,21 @@ else
     AC_MSG_RESULT(no)
 fi
 
-# Check for SWI-Prolog support.
-AC_ARG_WITH(prolog, [  --with-prolog=<SWI prolog binary>   where the SWI prolog main binary is installed])
+PKG_CHECK_MODULES(PROLOG, swi-prolog)
+PROLOG_BASE="`pkg-config --variable=base swi-prolog`"
+PROLOG_STATICLIB=""
+#PROLOG_STATICLIB="`pkg-config --variable=staticlib swi-prolog`"
 
-if test -z "$with_prolog" ; then
-  if which pl >& /dev/null; then
-    PLBIN="`which pl`"
-  else
-    if which swipl >& /dev/null; then
-      PLBIN="`which swipl`"
-    else
-        AC_MSG_ERROR([SWI prolog binary not found])
-    fi
-  fi
-else
-  PLBIN="$with_prolog"
-fi
-
-# Determine SWI-Prolog configuration (compilation and link flags)
-SWIPL_RUNTIME_VARIABLES="`$PLBIN -dump-runtime-variables | grep -v CC=`"
-eval $SWIPL_RUNTIME_VARIABLES
-
-SWIPL_HOME=$PLBASE
-SWIPL_CFLAGS="-I$PLBASE/include $PLCFLAGS"
-
-# Kludge: we statically link libpl.a into libprolog.so if there is
-# no libpl.so available.
-if test -L $PLBASE/lib/$PLARCH/libpl.so; then
-    SWIPL_LIBS="`echo $PLLIBS | sed 's/-lpl//g'`"
-    SWIPL_LIB="-L$PLBASE/lib/$PLARCH -lpl"
-    SWIPL_STATICLIB=""
-    SWIPL_LDFLAGS="$PLLDFLAGS"
-else
-    SWIPL_LIBS="`echo $PLLIBS | sed 's/-lpl//g'`"
-    SWIPL_LIB=""
-    SWIPL_STATICLIB="$PLBASE/lib/$PLARCH/libpl.a"
-    SWIPL_LDFLAGS="$PLLDFLAGS"
-fi
-
-PROLOG_HOME="$SWIPL_HOME"
-PROLOG_CFLAGS="$SWIPL_CFLAGS"
-PROLOG_LIBS="$SWIPL_LDFLAGS $SWIPL_LIB $SWIPL_LIBS"
-PROLOG_STATICLIB="$SWIPL_STATICLIB"
-
-echo "Prolog configuration:"
-echo "     HOME: $PROLOG_HOME"
-echo "   CFLAGS: $PROLOG_CFLAGS"
-echo "     LIBS: $PROLOG_LIBS"
-echo "STATICLIB: $PROLOG_STATICLIB"
-
-AC_SUBST(PROLOG_HOME)
+AC_SUBST(PROLOG_BASE)
 AC_SUBST(PROLOG_CFLAGS)
 AC_SUBST(PROLOG_LIBS)
 AC_SUBST(PROLOG_STATICLIB)
+
+echo "Prolog configuration:"
+echo "       BASE: $PROLOG_BASE"
+echo "     CFLAGS: $PROLOG_CFLAGS"
+echo "       LIBS: $PROLOG_LIBS"
+echo "  STATICLIB: $PROLOG_STATICLIB"
 
 
 # Generate these files.

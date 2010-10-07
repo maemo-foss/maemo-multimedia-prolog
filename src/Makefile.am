@@ -4,7 +4,7 @@ configdir       = $(datadir)/libprolog
 config_DATA     = libprolog.pl
 
 INCLUDES = -I$(top_builddir)/include
-DEFINES  = -DPROLOG_HOME=\"@PROLOG_HOME@\" \
+DEFINES  = -DPROLOG_HOME=\"@PROLOG_BASE@\" \
            -DLIBPROLOG_HELPER=\"$(configdir)/$(config_DATA)\"
 
 libprolog_la_CFLAGS  = $(INCLUDES) $(DEFINES) \
