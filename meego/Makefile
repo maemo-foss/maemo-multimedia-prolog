@@ -2,23 +2,30 @@ PACKAGE := libprolog
 VERSION := 0.1.0
 THISDIR := meego
 
-TOPDIR  := $(shell while [ ! -d $(THISDIR) -a "`pwd`" != "/" ]; do cd ..; done;\
-		   [ -d $(THISDIR) ] && pwd || exit 1)
+TOPDIR  := $(shell \
+                     while [ ! -d $(THISDIR) -a "`pwd`" != "/" ]; do \
+                       cd ..; \
+                     done; \
+		     [ -d $(THISDIR) ] && pwd || exit 1))
 
-ARCH     := i386
-RPM      := $(PACKAGE)-$(VERSION).$(ARCH).rpm
-SPECFILE := $(TOPDIR)/$(THISDIR)/$(PACKAGE).spec
-TARBALL  := $(TOPDIR)/$(THISDIR)/$(PACKAGE)-$(VERSION).tar.gz
-TARDIR  := $(notdir $(TOPDIR))
+ARCH      = $(shell rpm -q --queryformat "%{ARCH}\n" rpm)
+SPECFILE := $(PACKAGE).spec
+TARBALL  := $(PACKAGE)-$(VERSION).tar.gz
 
-STAMP   := $(shell date +%Y-%m-%d-%H%M%S)
-TMPDIR  := /tmp/$(PACKAGE)-$(USER)/$(STAMP)
+STAMP    := $(shell date +%Y-%m-%d-%H%M%S)
+TMPDIR   := /tmp/$(PACKAGE)-$(USER)/$(STAMP)
+PKGDIR   := $(PACKAGE)-$(VERSION)
 
+# tarball type to use (git = HEAD, current = working copy)
+type      = git
 
 all: rpms cleanup
 
+showvar:
+	@echo "$(var) = $($(var))"
+
 # rule to build RPM(s) for this package
-rpms: rmtar $(SPECFILE) $(TARBALL)
+rpms: rmtar $(SPECFILE) tarball
 	mkdir -p $(TMPDIR)/{BUILD,RPMS,SRPMS,SOURCES,SPECS} && \
 	cp $(SPECFILE) $(TMPDIR)/SPECS && \
 	cp $(TARBALL) $(TMPDIR)/SOURCES && \
@@ -26,8 +33,10 @@ rpms: rmtar $(SPECFILE) $(TARBALL)
 	    -bb $(TMPDIR)/SPECS/$(PACKAGE).spec && \
 	rpmbuild --define '_topdir $(TMPDIR)' \
 	    -bs $(TMPDIR)/SPECS/$(PACKAGE).spec && \
-	cp $(TMPDIR)/RPMS/$(ARCH)/*.rpm $(TOPDIR)/$(THISDIR)
-	cp $(TMPDIR)/SRPMS/*.rpm $(TOPDIR)/$(THISDIR)
+	cp $(TMPDIR)/RPMS/*/*.rpm $(THISDIR)/.
+	cp $(TMPDIR)/SRPMS/*.rpm $(THISDIR)/.
+
+obs: tarball $(SPECFILE)
 
 cleanup:
 	rm -fr $(TMPDIR) && \
@@ -41,15 +50,24 @@ $(SPECFILE): $(SPECFILE).in
 	    sed 's/##__ARCH__##/$(ARCH)/g' \
 	    > $@
 
-$(TARBALL):
-	pushd $(TOPDIR) && make distclean || : && ./autogen.sh && popd && \
-	pushd $(TOPDIR)/.. && \
-	tar -cvzf /tmp/$(notdir $@) \
-	    --exclude '*/$(THISDIR)' \
-	    --exclude '*/.git' $(notdir $(TARDIR)) && \
-	mv /tmp/$(notdir $@) $@
+tarball: $(type)-tarball
 
-meego-export: $(SPECFILE) $(TARBALL)
+git-tarball:
+	cd .. && \
+	    git archive --format=tar --prefix=$(PACKAGE)-$(VERSION)/ HEAD | \
+	        gzip > $(THISDIR)/$(TARBALL)
+
+current-tarball:
+	cd .. && make distclean || : && ./autogen.sh
+	cd .. && mkdir -p $(TMPDIR)/$(PKGDIR) && \
+	tar -cvf - --exclude '$(THISDIR)' \
+	           --exclude '.git' . | \
+	tar -C $(TMPDIR)/$(PKGDIR) -xvf - && \
+	tar -C $(TMPDIR) -cvzf $(TARBALL) $(PKGDIR) && \
+	cp $(TMPDIR)/$(TARBALL) . && \
+	rm -fr $(TMPDIR)
+
+rpm-export: $(SPECFILE) $(TARBALL)
 
 rmtar:
 	rm -f $(TARBALL)
