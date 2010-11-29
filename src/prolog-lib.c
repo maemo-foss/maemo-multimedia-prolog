@@ -116,7 +116,9 @@ prolog_init(char *argv0,
      * altogether.
      */
     
-    putenv("SWI_HOME_DIR="PROLOG_HOME);    /* hmm... is this needed now ? */
+#if 0
+    setenv("SWI_HOME_DIR", PROLOG_HOME, TRUE);  /* hmm... is this needed ? */
+#endif
 
     snprintf(lstack, sizeof(lstack), "-L%dk", lsize ?: 16);
     snprintf(gstack, sizeof(gstack), "-G%dk", gsize ?: 16);
