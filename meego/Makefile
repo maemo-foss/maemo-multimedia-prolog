@@ -10,7 +10,9 @@ TOPDIR  := $(shell \
 
 ARCH      = $(shell rpm -q --queryformat "%{ARCH}\n" rpm)
 SPECFILE := $(PACKAGE).spec
-TARBALL  := $(PACKAGE)-$(VERSION).tar.gz
+PREFIX   := $(PACKAGE)-$(VERSION)
+TARBALL  := $(PREFIX).tar.gz
+TARNONGZ := $(PREFIX).tar
 
 STAMP    := $(shell date +%Y-%m-%d-%H%M%S)
 TMPDIR   := /tmp/$(PACKAGE)-$(USER)/$(STAMP)
@@ -53,9 +55,19 @@ $(SPECFILE): $(SPECFILE).in
 tarball: $(type)-tarball
 
 git-tarball:
-	cd .. && \
-	    git archive --format=tar --prefix=$(PACKAGE)-$(VERSION)/ HEAD | \
-	        gzip > $(THISDIR)/$(TARBALL)
+	pushd .. && \
+	    git archive --format=tar --prefix=$(PACKAGE)-$(VERSION)/ HEAD \
+	        > $(THISDIR)/$(TARNONGZ) && \
+            ./build-aux/git-version-gen .tarball-version \
+                > $(THISDIR)/version && \
+        popd && \
+	rm -fr $(PREFIX) && mkdir -p $(PREFIX) && \
+            cp version $(PREFIX)/.tarball-version && \
+            tar -rvf $(TARNONGZ) $(PREFIX)/.tarball-version && \
+            rm -fr $(PREFIX) && \
+	rm -f $(TARBALL) && \
+            gzip -9 $(TARNONGZ) && \
+        rm -f version
 
 current-tarball:
 	cd .. && make distclean || : && ./autogen.sh
